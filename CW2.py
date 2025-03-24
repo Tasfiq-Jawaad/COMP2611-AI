@@ -26,75 +26,60 @@ def load_data(file_path, delimiter=','):
     # Insert your code here for task 1
 
     try:
-        # Read CSV using pandas
         df = pd.read_csv(file_path, delimiter=delimiter)
         
-        # Extract header list
         header_list = list(df.columns)
         
         # Convert dataframe to numpy array
         data = df.to_numpy()
         
-        # Get number of rows (samples)
         num_rows = data.shape[0]
         
-    except Exception as e:
-        warnings.warn(f"Task 1: Error while reading the CSV file - {e}")
+    except Exception as exc:
+        warnings.warn(f"Error while reading the CSV file - {exc}")
         return None, None, None
     
     return num_rows, data, header_list
 
 # Task 2[8 marks]: 
 def filter_data(data):
-    if data is None:
-        warnings.warn("Task 2: Warning - Input data is None.")
-        return None
-
-    # Convert data to NumPy array if it's not already
+    filtered_data=[None]*1
+    # Insert your code here for task 2
     data = np.array(data)
 
     # Keep rows that do NOT contain -99
-    filtered_data = data[~np.any(data == -99, axis=1)]
+    return data[~np.any(data == -99, axis=1)]
 
-    return filtered_data
 
 
 # Task 3 [8 marks]: 
 def statistics_data(data):
-    if data is None or len(data) == 0:
-        warnings.warn("Task 3: Warning - No data available for statistics.")
-        return None
+    coefficient_of_variation=None
+    # Insert your code here for task 3
 
-    # Step 1: Filter the data (same approach as Task 2)
-    data = np.array(data, dtype=np.float64)
-    data = data[~np.any(data == -99, axis=1)]  # Remove rows containing -99
+    # Filter the data (remove rows with -99)
+    filtered_data = data[~np.any(data == -99, axis=1)]
 
-    # Step 2: Exclude the last column (label column)
-    feature_data = data[:, :-1]  
+    features = filtered_data[:, :-1]
 
-    # Step 3: Compute mean and standard deviation
-    mean = np.mean(feature_data, axis=0)
-    std_dev = np.std(feature_data, axis=0)
+    # Compute the mean and standard deviation for each feature
+    means = np.mean(features, axis=0, dtype=np.float64)
+    std_devs = np.std(features, axis=0, dtype=np.float64)
 
-    # Step 4: Compute coefficient of variation
-    # If mean is 0, return np.inf to avoid division by zero
-    coefficient_of_variation = np.where(mean == 0, np.inf, std_dev / mean)
-
-    return coefficient_of_variation
+    # Compute coefficient of variation (std / mean)
+    return np.where(means == 0, np.inf, std_devs / means)
 
 
 # Task 4 [8 marks]: 
 def split_data(data, test_size=0.3, random_state=1):
-    np.random.seed(random_state)  # Ensure reproducibility
+    x_train, x_test, y_train, y_test=None, None, None, None
+    np.random.seed(1)
+    # Insert your code here for task 4
 
-    # Convert data to numpy array
-    data = np.array(data, dtype=np.float64)
+    # Split features and labels
+    X = data[:, :-1] 
+    y = data[:, -1]  
 
-    # Extract features (X) and labels (y)
-    X = data[:, :-1]  # All columns except the last one (features)
-    y = data[:, -1]   # Last column (labels)
-
-    # Split the dataset while maintaining label ratios (stratification)
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
@@ -103,147 +88,152 @@ def split_data(data, test_size=0.3, random_state=1):
 
 # Task 5 [8 marks]: 
 def train_decision_tree(x_train, y_train, ccp_alpha=0):
-    # Initialize the DecisionTreeClassifier with specified parameters
+    model=None
+    # Insert your code here for task 5
+
     model = DecisionTreeClassifier(random_state=1, ccp_alpha=ccp_alpha)
-    
-    # Train (fit) the model using the training data
+
     model.fit(x_train, y_train)
-    
+
     return model
 
 # Task 6 [8 marks]: 
 def make_predictions(model, X_test):
-    # Use the trained model to make predictions
+    y_test_predicted=None
+    # Insert your code here for task 6
+
     y_test_predicted = model.predict(X_test)
-    
+
     return y_test_predicted
 
 
+
 # Task 7 [8 marks]: 
-def evaluate_model(model, x, y): 
-    # Get predictions
+def evaluate_model(model, x, y):
+    accuracy, recall = None, None
+    # Insert your code here for task 7
+
     y_pred = model.predict(x)
-    
-    # Calculate accuracy and recall
+
     accuracy = accuracy_score(y, y_pred)
+
     recall = recall_score(y, y_pred)
-    
+
     return accuracy, recall
+
 
 
 # Task 8 [8 marks]: 
 def optimal_ccp_alpha(x_train, y_train, x_test, y_test):
-    # Train an initial unpruned model with ccp_alpha=0
-    model = DecisionTreeClassifier(ccp_alpha=0, random_state=1)
-    model.fit(x_train, y_train)
+    optimal_ccp_alpha = None
+
+    # Insert your code here for task 8
+
+    base_model = DecisionTreeClassifier(random_state=1, ccp_alpha=0)
+    base_model.fit(x_train, y_train)
     
-    # Get baseline accuracy
-    base_accuracy = accuracy_score(y_test, model.predict(x_test))
-    
-    # If the model achieves perfect accuracy, return 0.0
+    base_accuracy = accuracy_score(y_test, base_model.predict(x_test))
+
     if base_accuracy == 1.0:
         return 0.0
-    
-    # Define acceptable accuracy range (±1%)
-    min_accuracy = base_accuracy - 0.01
-    max_accuracy = base_accuracy + 0.01
-    
-    # Start searching for optimal ccp_alpha
-    optimal_alpha = 0.0
-    for alpha in np.arange(0.001, 1.001, 0.001):  # Step from 0.001 to 1.0
-        model = DecisionTreeClassifier(ccp_alpha=alpha, random_state=1)
+
+    lower_bound = base_accuracy - 0.01
+
+    last_valid_ccp_alpha = 0.0
+
+    for ccp_alpha in np.arange(0.001, 1.001, 0.001):
+        model = DecisionTreeClassifier(random_state=1, ccp_alpha=ccp_alpha)
         model.fit(x_train, y_train)
+        
         accuracy = accuracy_score(y_test, model.predict(x_test))
         
-        # If accuracy drops below threshold, stop and return last valid ccp_alpha
-        if accuracy < min_accuracy:
-            break
+        if accuracy < lower_bound:
+            return last_valid_ccp_alpha
         
-        # Update optimal_alpha to the last valid alpha
-        optimal_alpha = alpha
+        last_valid_ccp_alpha = ccp_alpha
 
-    return optimal_alpha
+    return last_valid_ccp_alpha
+
 
 
 # Task 9 [8 marks]: 
 def tree_depths(model):
-    depth = model.get_depth()  # Get the depth of the decision tree
+    depth = None
+    # Get the depth of the unpruned tree
+    # Insert your code here for task 9
+    
+    depth = model.get_depth()
+    
     return depth
+
 
 
  # Task 10 [8 marks]: 
 def important_feature(x_train, y_train, header_list):
     best_feature = None
+    # Insert your code here for task 10
+
+    last_valid_feature = None
     ccp_alpha = 0.0
-    while ccp_alpha <= 1.0:
-        # Train the model with the current ccp_alpha value
+
+    for _ in range(100):
         model = DecisionTreeClassifier(random_state=1, ccp_alpha=ccp_alpha)
         model.fit(x_train, y_train)
+        depth = model.get_depth()
 
-        # Check if the model has depth 1
-        if model.get_depth() == 1:
-            # Get the feature used for the split at depth 1
+        if depth == 1:
             best_feature = header_list[model.tree_.feature[0]]
-            break
+            return best_feature
+        elif depth > 1:
+            last_valid_feature = header_list[model.tree_.feature[0]]
         
-        # Increment ccp_alpha and check again
         ccp_alpha += 0.01
-    
-    return best_feature
+        if ccp_alpha > 1.0:
+            break
+
+    return last_valid_feature
+
 
     
 # Task 11 [10 marks]: 
 def optimal_ccp_alpha_single_feature(x_train, y_train, x_test, y_test, header_list):
-    # Step 1: Identify the most important feature using the method from Task 10
-    important_feature_name = important_feature(x_train, y_train, header_list)
+    feature_name = important_feature(x_train, y_train, header_list)
 
-    # Step 2: Create new datasets containing only the most important feature
-    important_feature_index = header_list.index(important_feature_name)
-    x_train_single_feature = x_train[:, important_feature_index].reshape(-1, 1)
-    x_test_single_feature = x_test[:, important_feature_index].reshape(-1, 1)
+    feature_index = header_list.index(feature_name)
+    x_train_single_feature = x_train[:, feature_index].reshape(-1, 1)
+    x_test_single_feature = x_test[:, feature_index].reshape(-1, 1)
 
-    # Step 3: Use the optimal_ccp_alpha method from Task 8 with the new datasets
-    optimal_ccp_alpha_value = optimal_ccp_alpha(x_train_single_feature, y_train, x_test_single_feature, y_test)
+    return optimal_ccp_alpha(x_train_single_feature, y_train, x_test_single_feature, y_test)
 
-    # Return the optimal ccp_alpha value found
-    return optimal_ccp_alpha_value
 
 
 # Task 12 [10 marks]: 
 def optimal_depth_two_features(x_train, y_train, x_test, y_test, header_list):
-    # Step 1: Identify the most important feature using the method from Task 10
-    important_feature_name = important_feature(x_train, y_train, header_list)
-
-    # Step 2: Remove the most important feature from consideration
-    important_feature_index = header_list.index(important_feature_name)
-    header_list_without_first = header_list[:important_feature_index] + header_list[important_feature_index+1:]
-    x_train_without_first = np.delete(x_train, important_feature_index, axis=1)
-    x_test_without_first = np.delete(x_test, important_feature_index, axis=1)
-
-    # Step 3: Identify the second most important feature using the updated list of features
-    second_important_feature_name = important_feature(x_train_without_first, y_train, header_list_without_first)
-
-    # Step 4: Create a new dataset with only the two important features
-    second_important_feature_index = header_list_without_first.index(second_important_feature_name)
+    optimal_depth = None
+    # Insert your code here for task 12
     
-    # Adjust for the first feature that was removed: Add 1 to the index of the second feature
-    if second_important_feature_index >= important_feature_index:
-        second_important_feature_index += 1
+    most_important_feature = important_feature(x_train, y_train, header_list)
 
-    selected_features_indices = [important_feature_index, second_important_feature_index]
+    most_important_feature_index = header_list.index(most_important_feature)
+    header_list_without_first = header_list[:most_important_feature_index] + header_list[most_important_feature_index + 1:]
+    x_train_without_first = np.delete(x_train, most_important_feature_index, axis=1)
+
+    second_important_feature = important_feature(x_train_without_first, y_train, header_list_without_first)
+    
+    second_important_feature_index = header_list.index(second_important_feature)
+
+    selected_features_indices = [most_important_feature_index, second_important_feature_index]
     x_train_two_features = x_train[:, selected_features_indices]
     x_test_two_features = x_test[:, selected_features_indices]
 
-    # Step 5: Use the optimal_ccp_alpha method from Task 8 with the new dataset containing two features
     optimal_ccp_alpha_value = optimal_ccp_alpha(x_train_two_features, y_train, x_test_two_features, y_test)
 
-    # Step 6: Train the decision tree with the optimal ccp_alpha
     model = train_decision_tree(x_train_two_features, y_train, ccp_alpha=optimal_ccp_alpha_value)
 
-    # Step 7: Return the depth of the trained decision tree
     optimal_depth = tree_depths(model)
 
     return optimal_depth
+
 
 
 
